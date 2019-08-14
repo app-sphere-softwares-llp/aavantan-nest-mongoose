@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { DbNameEnum } from '../shared/dbName.enum';
-import { Document, Model } from 'mongoose';
+import { Document, Model, Types } from 'mongoose';
 import { ProjectsModel } from './models/projects.model';
 import { CreateProjectsDto } from './models/projects.dto';
 
@@ -12,7 +12,7 @@ export class ProjectsService {
   }
 
   async getAll() {
-    return await this._projectModel.find().exec();
+    return await this._projectModel.find().populate('memberDetails').exec();
   }
 
   async add(project: CreateProjectsDto) {
@@ -26,34 +26,30 @@ export class ProjectsService {
     projectModel.updatedBy = project.updatedBy;
     projectModel.projectVersion = project.projectVersion;
 
-    const unRegisteredUsers = project.membersList.filter(f => !f.userId).map(m => m.emailId);
-    projectModel.members = project.membersList
-      .filter(f => !unRegisteredUsers.includes(f.emailId))
-      .map(m => {
-        return {
-          userId: m.userId,
-        };
-      });
+    projectModel.members = project.membersList.map(m => {
+      return {
+        userId: m.userId ? new Types.ObjectId(m.userId) : null,
+        emailId: m.emailId || null,
+        isEmailSent: false,
+        isInviteAccepted: false,
+      };
+    });
 
     const createProject = await this._projectModel.create(projectModel);
 
     if (createProject) {
-      if (unRegisteredUsers.length) {
-        const projectMembers: ProjectsModel['members'] = [];
-        project.membersList.forEach(member => {
-          if (member.userId) {
-            projectMembers.push({
-              isEmailSent: false, isInviteAccepted: false, userName: '',
-              userId: member.userId,
-            });
-          }
-        });
-        return this._projectModel.findByIdAndUpdate(createProject.id, {
-          members: projectMembers,
-        });
-      } else {
-        return createProject;
-      }
+      // const projectMembers: ProjectsModel['members'] = [];
+      // project.membersList.forEach(member => {
+      //   if (member.userId) {
+      //     projectMembers.push({
+      //       isEmailSent: false, isInviteAccepted: false, userId: new Types.ObjectId(member.userId),
+      //     });
+      //   }
+      // });
+      // return this._projectModel.findByIdAndUpdate(createProject.id, {
+      //   members: projectMembers,
+      // });
+      return createProject;
     } else {
       return 'Project creation error!';
     }

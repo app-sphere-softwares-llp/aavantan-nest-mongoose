@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 import { DbNameEnum } from '../../shared/dbName.enum';
+import { ProjectsModel } from '../models/projects.model';
+import { UsersModel } from '../../users/models/users.model';
 
 export const projectsSchema = new mongoose.Schema({
   projectName: { type: String, required: [true, 'Project Name is required'] },
@@ -9,7 +11,7 @@ export const projectsSchema = new mongoose.Schema({
     type: Array,
     default: [],
     userId: { type: mongoose.Schema.Types.ObjectId, ref: DbNameEnum.users },
-    userName: { type: String, dafault: null },
+    emailId: { type: String },
     isEmailSent: { type: Boolean },
     isInviteAccepted: { type: Boolean },
   },
@@ -17,4 +19,35 @@ export const projectsSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedBy: { type: String, required: true },
   updatedAt: { type: Date, default: Date.now },
+})
+  .set('toObject', { virtuals: true })
+  .set('toJSON', { virtuals: true });
+
+// virtual
+projectsSchema.virtual('memberDetails', {
+  ref: DbNameEnum.users,
+  localField: 'members.userId',
+  foreignField: '_id',
+});
+
+// hooks
+projectsSchema.post<ProjectsModel & mongoose.Document>('save', (doc, next) => {
+  const unRegisteredUsers = doc.members.filter(f => !f.userId);
+  const registeredUsers = doc.members.filter(f => f.userId);
+
+  const unRegisteredUsersModelArray: UsersModel[] = [];
+  const registeredUsersModelArray: UsersModel[] = [];
+
+  unRegisteredUsers.forEach(user => {
+    unRegisteredUsersModelArray.push({
+      email: user.emailId,
+      facebookId: null,
+      googleId: null,
+      password: null,
+    });
+  });
+
+  const userModel = mongoose.model(DbNameEnum.users);
+  userModel.create(unRegisteredUsersModelArray);
+  next();
 });
