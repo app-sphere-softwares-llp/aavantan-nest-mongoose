@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose';
 import { DbNameEnum } from '../../shared/dbName.enum';
 import { ProjectsModel } from '../models/projects.model';
 import { UsersModel } from '../../users/models/users.model';
+import { usersSchema } from '../../users/schemas/users.schema';
 
 export const projectsSchema = new mongoose.Schema({
   projectName: { type: String, required: [true, 'Project Name is required'] },
@@ -47,7 +48,17 @@ projectsSchema.post<ProjectsModel & mongoose.Document>('save', (doc, next) => {
     });
   });
 
-  const userModel = mongoose.model(DbNameEnum.users);
-  userModel.create(unRegisteredUsersModelArray);
-  next();
+  const userModel = mongoose.model(DbNameEnum.users, usersSchema);
+  userModel.create({
+    email: 'ishara',
+    facebookId: null,
+    googleId: null,
+    password: null,
+  }).then(() => {
+    next();
+  }).catch((e) => {
+    // tslint:disable-next-line:no-console
+    console.log(e);
+    next();
+  });
 });
