@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Document, Model } from 'mongoose';
-import { UsersModel } from './models/users.model';
-import { DbNameEnum } from '../shared/dbName.enum';
+import { DbNameEnum } from '../../consts/dbName.enum';
+import { UsersModel } from '../../users/models/users.model';
 
 @Injectable()
 export class UsersService {

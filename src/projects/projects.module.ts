@@ -1,19 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ProjectsService } from './projects.service';
 import { ProjectsController } from './projects.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import { DbNameEnum } from '../shared/dbName.enum';
-import { projectsSchema } from './schemas/projects.schema';
+import { SharedModule } from '../shared/shared.module';
 
 @Module({
-  providers: [ProjectsService],
+  providers: [],
   controllers: [ProjectsController],
   imports: [
-    MongooseModule.forFeature([{
-      name: DbNameEnum.projects,
-      collection: DbNameEnum.projects,
-      schema: projectsSchema,
-    }]),
+    SharedModule
   ],
 })
 export class ProjectsModule {

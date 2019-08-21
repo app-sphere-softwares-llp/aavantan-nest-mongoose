@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { DbNameEnum } from '../../shared/dbName.enum';
+import { DbNameEnum } from '../../consts/dbName.enum';
 import { ProjectsModel } from '../models/projects.model';
 import { UsersModel } from '../../users/models/users.model';
 import { usersSchema } from '../../users/schemas/users.schema';
@@ -32,33 +32,45 @@ projectsSchema.virtual('memberDetails', {
 });
 
 // hooks
-projectsSchema.post<ProjectsModel & mongoose.Document>('save', (doc, next) => {
-  const unRegisteredUsers = doc.members.filter(f => !f.userId);
-  const registeredUsers = doc.members.filter(f => f.userId);
 
-  const unRegisteredUsersModelArray: UsersModel[] = [];
-  const registeredUsersModelArray: UsersModel[] = [];
-
-  unRegisteredUsers.forEach(user => {
-    unRegisteredUsersModelArray.push({
-      email: user.emailId,
-      facebookId: null,
-      googleId: null,
-      password: null,
-    });
-  });
-
-  const userModel = mongoose.model(DbNameEnum.users, usersSchema);
-  userModel.create({
-    email: 'ishara',
-    facebookId: null,
-    googleId: null,
-    password: null,
-  }).then(() => {
-    next();
-  }).catch((e) => {
-    // tslint:disable-next-line:no-console
-    console.log(e);
-    next();
-  });
-});
+// projectsSchema.post<ProjectsModel & mongoose.Document>('save', async (doc, next, err) => {
+//   const unRegisteredUsers = doc.members.filter(f => !f.userId);
+//   const registeredUsers = doc.members.filter(f => f.userId);
+//
+//   const unRegisteredUsersModelArray: UsersModel[] = [];
+//   const registeredUsersModelArray: UsersModel[] = [];
+//
+//   unRegisteredUsers.forEach(user => {
+//     unRegisteredUsersModelArray.push({
+//       email: user.emailId,
+//       facebookId: null,
+//       googleId: null,
+//       password: null,
+//     });
+//   });
+//   const userModel = mongoose.model(DbNameEnum.users, usersSchema);
+//   try {
+//     await userModel.find({});
+//     // await userModel.create({
+//     //   email: 'ishara',
+//     //   facebookId: null,
+//     //   googleId: null,
+//     //   password: null,
+//     // });
+//   } catch (e) {
+//     console.log(e);
+//   }
+//   next();
+//   // userModel.create({
+//   //   email: 'ishara',
+//   //   facebookId: null,
+//   //   googleId: null,
+//   //   password: null,
+//   // }).then(() => {
+//   //   console.log('Done');
+//   //   next();
+//   // }).catch((e) => {
+//   //   console.log(e);
+//   //   next();
+//   // });
+// });

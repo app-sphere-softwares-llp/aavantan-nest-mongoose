@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { UsersModel } from '../models/users.model';
 
 export const usersSchema = new mongoose.Schema({
 
