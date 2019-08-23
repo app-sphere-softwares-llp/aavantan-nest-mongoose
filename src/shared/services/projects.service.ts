@@ -22,6 +22,7 @@ export class ProjectsService {
     session = await this._projectModel.db.startSession();
     session.startTransaction();
     try {
+      // prepare project model
       const projectModel = new ProjectsModel();
 
       projectModel.projectName = project.projectName;
@@ -41,9 +42,11 @@ export class ProjectsService {
         };
       });
 
+      // create project
       const createProject = await this._projectModel.create([projectModel], { session });
 
       if (createProject) {
+        // get all unregistered users
         const unRegisteredUsers = projectModel.members.filter(f => !f.userId);
         const unRegisteredUsersModelArray: UsersModel[] = [];
         unRegisteredUsers.forEach(user => {
@@ -54,15 +57,19 @@ export class ProjectsService {
             password: null,
           });
         });
+        // create unregistered users
         const createdUsers = await this._usersModel.create(unRegisteredUsersModelArray, { session });
 
-        // update project model
+        // send mail
+
+        // update project model array with newly created users
         const updatedMembers = projectModel.members.map(pm => {
           if (!pm.userId) {
             pm.userId = new Types.ObjectId(createdUsers.find(f => f.email === pm.emailId).id);
           }
           return pm;
         });
+        // update project
         await this._projectModel.update({ _id: createProject[0].id }, { members: updatedMembers }, { session });
         await session.commitTransaction();
         session.endSession();
