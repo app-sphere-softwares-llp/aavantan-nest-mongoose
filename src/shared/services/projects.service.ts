@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import * as mongoose from 'mongoose';
 import { ClientSession, Document, Model, Types } from 'mongoose';
 import { DbNameEnum } from '../../consts/dbName.enum';
 import { ProjectsModel } from '../../projects/models/projects.model';
@@ -20,12 +19,9 @@ export class ProjectsService {
 
   async add(project: CreateProjectsDto) {
     let session: ClientSession;
+    session = await this._projectModel.db.startSession();
+    session.startTransaction();
     try {
-      session = await mongoose.startSession({});
-    } catch (e) {
-      session = null;
-    }
-    return await session.withTransaction(async () => {
       const projectModel = new ProjectsModel();
 
       projectModel.projectName = project.projectName;
@@ -46,33 +42,32 @@ export class ProjectsService {
       });
 
       // try {
-      const createProject = await this._projectModel.create(projectModel, { session });
+      const createProject = await this._projectModel.create([projectModel], { session });
 
       if (createProject) {
-        const unRegisteredUsers = createProject.members.filter(f => !f.userId);
+        const unRegisteredUsers = projectModel.members.filter(f => !f.userId);
         const unRegisteredUsersModelArray: UsersModel[] = [];
         unRegisteredUsers.forEach(user => {
           unRegisteredUsersModelArray.push({
-            email: user.emailId,
+            // email: user.emailId,
             facebookId: null,
             googleId: null,
             password: null,
           });
         });
         await this._usersModel.create(unRegisteredUsers, { session });
-        // await session.commitTransaction();
-        // session.endSession();
-        return this._projectModel.findById(createProject.id);
+        await session.commitTransaction();
+        session.endSession();
+        return this._projectModel.findById(createProject[0].id);
       } else {
-        // await session.abortTransaction();
-        // session.endSession();
+        await session.abortTransaction();
+        session.endSession();
         return 'Project creation error!';
       }
-      // } catch (e) {
-      //   await session.abortTransaction();
-      //   session.endSession();
-      //   throw e;
-      // }
-    });
+    } catch (e) {
+      await session.abortTransaction();
+      session.endSession();
+      return e;
+    }
   }
 }
