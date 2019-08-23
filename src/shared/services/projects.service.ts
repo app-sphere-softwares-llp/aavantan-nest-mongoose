@@ -41,7 +41,6 @@ export class ProjectsService {
         };
       });
 
-      // try {
       const createProject = await this._projectModel.create([projectModel], { session });
 
       if (createProject) {
@@ -49,13 +48,13 @@ export class ProjectsService {
         const unRegisteredUsersModelArray: UsersModel[] = [];
         unRegisteredUsers.forEach(user => {
           unRegisteredUsersModelArray.push({
-            // email: user.emailId,
+            email: user.emailId,
             facebookId: null,
             googleId: null,
             password: null,
           });
         });
-        await this._usersModel.create(unRegisteredUsers, { session });
+        await this._usersModel.create(unRegisteredUsersModelArray, { session });
         await session.commitTransaction();
         session.endSession();
         return this._projectModel.findById(createProject[0].id);
