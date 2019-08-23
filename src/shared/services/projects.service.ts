@@ -54,7 +54,16 @@ export class ProjectsService {
             password: null,
           });
         });
-        await this._usersModel.create(unRegisteredUsersModelArray, { session });
+        const createdUsers = await this._usersModel.create(unRegisteredUsersModelArray, { session });
+
+        // update project model
+        const updatedMembers = projectModel.members.map(pm => {
+          if (!pm.userId) {
+            pm.userId = new Types.ObjectId(createdUsers.find(f => f.email === pm.emailId).id);
+          }
+          return pm;
+        });
+        await this._projectModel.update({ _id: createProject[0].id }, { members: updatedMembers }, { session });
         await session.commitTransaction();
         session.endSession();
         return this._projectModel.findById(createProject[0].id);
